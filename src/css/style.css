@@ -21,7 +21,7 @@ body {
   height: 300px;
 }
 
-.wrapper {
+#window {
   overflow: hidden;
   position: relative;
   width: 400px;
@@ -30,7 +30,7 @@ body {
   z-index: 1;
 }
 
-.slides {
+#wrapper {
   display: flex;
   position: relative;
   top: 0;
@@ -38,7 +38,7 @@ body {
   width: 10000px;
 }
 
-.slides.shifting {
+#wrapper.shifting {
   transition: left .2s ease-out;
 }
 

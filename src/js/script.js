@@ -10,9 +10,9 @@ class Slide {
     this.posInitial = this.items.offsetLeft;
     this.posFinal = this.items.offsetLeft;
     this.threshold = 100;
-    this.slides = this.items.getElementsByClassName('slide');
+    this.slides = this.items.querySelectorAll('.slide');
     this.slidesLength = this.slides.length;
-    this.slideSize = this.items.getElementsByClassName('slide')[0].offsetWidth;
+    this.slideSize = this.items.querySelectorAll('.slide')[0].offsetWidth;
     this.firstSlide = this.slides[0],
     this.lastSlide = this.slides[this.slidesLength - 1],
     this.cloneFirst = this.firstSlide.cloneNode(true),
@@ -20,28 +20,28 @@ class Slide {
     this.index = 0,
     this.allowShift = true;
 
-    // Clone first and last slide
+    /* // Clone first and last slide
     items.appendChild(this.cloneFirst);
     items.insertBefore(this.cloneLast, this.firstSlide);
     slider.classList.add('loaded');
     
     // Mouse events
-    items.onmousedown = this.dragStart;
+    items.onmousedown = () => {this.dragStart()};
     
     // Touch events
-    items.addEventListener('touchstart', this.dragStart);
-    items.addEventListener('touchend', this.dragEnd);
-    items.addEventListener('touchmove', this.dragAction);
+    items.addEventListener('touchstart', () => {this.dragStart()});
+    items.addEventListener('touchend', () => {this.dragEnd()});
+    items.addEventListener('touchmove', () => {this.dragAction()});
     
     // Click events
     prev.addEventListener('click', () => {this.shiftSlide(-1)});
     next.addEventListener('click', () => {this.shiftSlide(1)});
     
     // Transition events
-    items.addEventListener('transitionend', this.checkIndex);
+    items.addEventListener('transitionend', this.checkIndex()); */
   }
 
-  dragStart (e) {
+  /* dragStart (e) {
     e = e || window.event;
     e.preventDefault();
     
@@ -55,6 +55,8 @@ class Slide {
   }
 
   dragAction (e) {
+    console.log(this.items);
+
     e = e || window.event;
     
     if (e.type == 'touchmove') {
@@ -112,12 +114,12 @@ class Slide {
     }
     
     this.allowShift = true;
-  }
+  } */
 }
 
-const slider = document.getElementById('slider');
-const items = document.getElementById('slides');
-const prev = document.getElementById('prev');
-const next = document.getElementById('next');
+const slider = document.querySelector('#slider');
+const items = document.querySelector('#slides');
+const prev = document.querySelector('#prev');
+const next = document.querySelector('#next');
 
-slide = new Slide(slider, items, prev, next);
+const slide = new Slide(slider, items, prev, next);
