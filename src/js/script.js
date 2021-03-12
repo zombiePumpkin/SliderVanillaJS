@@ -1,97 +1,114 @@
 class Slide {
-  constructor(slider, items, prev, next) {
-    this.slider = slider;
-    this.items = items;
-    this.prev = prev;
-    this.next = next;
+  constructor() {
+    this.wrapper = document.querySelector('#slider');
+    this.items = document.querySelector('#slides');
+    this.prev = document.querySelector('#prev');
+    this.next = document.querySelector('#next');
 
     this.posX1 = 0;
     this.posX2 = 0;
-    this.posInitial = this.items.offsetLeft;
-    this.posFinal = this.items.offsetLeft;
+    this.posInitial;
+    this.posFinal;
     this.threshold = 100;
+  
     this.slides = this.items.querySelectorAll('.slide');
     this.slidesLength = this.slides.length;
-    this.slideSize = this.items.querySelectorAll('.slide')[0].offsetWidth;
-    this.firstSlide = this.slides[0],
-    this.lastSlide = this.slides[this.slidesLength - 1],
-    this.cloneFirst = this.firstSlide.cloneNode(true),
-    this.cloneLast = this.lastSlide.cloneNode(true),
-    this.index = 0,
+    this.slideSize = this.slides[0].offsetWidth;
+    this.index = 0;
     this.allowShift = true;
+    
+    this.cloneFirst = this.slides[0].cloneNode(true);
+    this.cloneLast = this.slides[this.slidesLength - 1].cloneNode(true);
+    
+    // Clone the first and the last slides
+    this.items.insertAdjacentElement('afterBegin', this.cloneLast);
+    this.items.insertAdjacentElement('beforeEnd', this.cloneFirst);
 
-    /* // Clone first and last slide
-    items.appendChild(this.cloneFirst);
-    items.insertBefore(this.cloneLast, this.firstSlide);
-    slider.classList.add('loaded');
+    // Script initialized the slider
+    this.wrapper.classList.add('loaded');
+
+    // Init the default events on the
+    this.initEvents();
+  }
+  
+  initEvents() {
+    // User dragStart the left mouse button
+    function dragStart(event) {
+      this.posInitial = this.items.offsetLeft;
+      
+      if (event.type === 'touchstart') {
+        this.posX1 = event.touches[0].clientX;
+      }
+      
+      if (event.type === 'mousedown') {
+        this.posX1 = event.clientX;
+        document.addEventListener('mousemove', dragOut);
+        document.addEventListener('mouseup', dragEnd);
+      }
+    }
+
+    // User move the mouse on the screen
+    function dragOut(event) {
+      if (event.type === 'touchmove') {
+        this.posX2 = this.posX1 - event.touches[0].clientX;
+        this.posX1 = event.touches[0].clientX;
+      }
+
+      if (event.type === 'mousemove') {
+        this.posX2 = this.posX1 - event.clientX;
+        this.posX1 = event.clientX;
+      }
+      
+      this.items.style.left = (this.items.offsetLeft - this.posX2) + 'px';
+    }
+    
+    // User dragEnd the left mouse button
+    function dragEnd() {
+      this.posFinal = this.items.offsetLeft;
+
+      if (this.posFinal - this.posInitial < -this.threshold) {
+        this.shiftSlide(1, 'drag');
+      } else if (this.posFinal - this.posInitial > this.threshold) {
+        this.shiftSlide(-1, 'drag');
+      } else {
+        this.items.style.left = (this.posInitial) + 'px';
+      }
+  
+      document.removeEventListener('mousemove', dragOut);
+      document.removeEventListener('mouseup', dragEnd);
+    }
+
+    // bind this in the handler functions
+    dragStart = dragStart.bind(this);
+    dragOut = dragOut.bind(this);
+    dragEnd = dragEnd.bind(this);
     
     // Mouse events
-    items.onmousedown = () => {this.dragStart()};
+    document.addEventListener('mousedown', dragStart);
     
     // Touch events
-    items.addEventListener('touchstart', () => {this.dragStart()});
-    items.addEventListener('touchend', () => {this.dragEnd()});
-    items.addEventListener('touchmove', () => {this.dragAction()});
+    document.addEventListener('touchstart', dragStart);
+    document.addEventListener('touchmove', dragOut);
+    document.addEventListener('touchend', dragEnd);
+
+    // Transition events
+    this.wrapper.addEventListener('transitionend', () => this.checkIndex());
     
     // Click events
-    prev.addEventListener('click', () => {this.shiftSlide(-1)});
-    next.addEventListener('click', () => {this.shiftSlide(1)});
-    
-    // Transition events
-    items.addEventListener('transitionend', this.checkIndex()); */
+    this.prev.addEventListener('click', () => this.shiftSlide(-1));
+    this.next.addEventListener('click', () => this.shiftSlide(1));
   }
-
-  /* dragStart (e) {
-    e = e || window.event;
-    e.preventDefault();
-    
-    if (e.type == 'touchstart') {
-      this.posX1 = e.touches[0].clientX;
-    } else {
-      this.posX1 = e.clientX;
-      document.onmouseup = this.dragEnd;
-      document.onmousemove = this.dragAction;
-    }
-  }
-
-  dragAction (e) {
-    console.log(this.items);
-
-    e = e || window.event;
-    
-    if (e.type == 'touchmove') {
-      this.posX2 = this.posX1 - e.touches[0].clientX;
-      this.posX1 = e.touches[0].clientX;
-    } else {
-      this.posX2 = this.posX1 - e.clientX;
-      this.posX1 = e.clientX;
-    }
-    this.items.style.left = (this.items.offsetLeft - this.posX2) + "px";
-  }
-
-  dragEnd (e) {
-    if (this.posFinal - this.posInitial < -this.threshold) {
-      shiftSlide(1, 'drag');
-    } else if (this.posFinal - this.posInitial > this.threshold) {
-      shiftSlide(-1, 'drag');
-    } else {
-      this.items.style.left = (posInitial) + "px";
-    }
-
-    document.onmouseup = null;
-    document.onmousemove = null;
-  }
-
+  
   shiftSlide(dir, action) {
     this.items.classList.add('shifting');
     
     if (this.allowShift) {
       if (!action) { this.posInitial = this.items.offsetLeft; }
 
-      if (dir == 1) {
+      if (dir === 1) {
         this.items.style.left = (this.posInitial - this.slideSize) + 'px';
         this.index++;      
-      } else if (dir == -1) {
+      } else if (dir === -1) {
         this.items.style.left = (this.posInitial + this.slideSize) + 'px';
         this.index--;      
       }
@@ -99,27 +116,22 @@ class Slide {
     
     this.allowShift = false;
   }
-
-  checkIndex (){
+    
+  checkIndex () {
     this.items.classList.remove('shifting');
 
-    if (this.index == -1) {
+    if (this.index === -1) {
       this.items.style.left = -(this.slidesLength * this.slideSize) + 'px';
       this.index = this.slidesLength - 1;
     }
 
-    if (this.index == this.slidesLength) {
+    if (this.index === this.slidesLength) {
       this.items.style.left = -(1 * this.slideSize) + 'px';
       this.index = 0;
     }
     
     this.allowShift = true;
-  } */
+  }
 }
 
-const slider = document.querySelector('#slider');
-const items = document.querySelector('#slides');
-const prev = document.querySelector('#prev');
-const next = document.querySelector('#next');
-
-const slide = new Slide(slider, items, prev, next);
+const slide = new Slide();
