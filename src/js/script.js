@@ -13,12 +13,20 @@ class Slide {
   
     this.slides = this.items.querySelectorAll('.slide');
     this.slidesLength = this.slides.length;
-    this.slideSize = this.slides[0].offsetWidth;
+
+    const marginLeft = Number(window.getComputedStyle(this.slides[0]).marginLeft.split('')[0]);
+    const marginRight = Number(window.getComputedStyle(this.slides[0]).marginRight.split('')[0]);
+    const totalMargin = marginLeft + marginRight;
+    
+    this.slideSize = this.slides[0].offsetWidth + totalMargin;
+
     this.index = 0;
     this.allowShift = true;
     
     this.cloneFirst = this.slides[0].cloneNode(true);
+    this.cloneFirst.classList.add('clone');
     this.cloneLast = this.slides[this.slidesLength - 1].cloneNode(true);
+    this.cloneLast.classList.add('clone');
     
     // Clone the first and the last slides
     this.items.insertAdjacentElement('afterBegin', this.cloneLast);
@@ -107,10 +115,10 @@ class Slide {
 
       if (dir === 1) {
         this.items.style.left = (this.posInitial - this.slideSize) + 'px';
-        this.index++;      
+        this.index++;
       } else if (dir === -1) {
         this.items.style.left = (this.posInitial + this.slideSize) + 'px';
-        this.index--;      
+        this.index--;
       }
     };
     
@@ -126,7 +134,7 @@ class Slide {
     }
 
     if (this.index === this.slidesLength) {
-      this.items.style.left = -(1 * this.slideSize) + 'px';
+      this.items.style.left = -(this.slideSize) + 'px';
       this.index = 0;
     }
     
@@ -135,3 +143,6 @@ class Slide {
 }
 
 const slide = new Slide();
+
+// slidesToLoad = 9
+// slidesToShow = 3

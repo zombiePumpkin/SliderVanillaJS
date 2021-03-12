@@ -13,20 +13,19 @@ body {
 }
 
 .slider {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 400px;
-  height: 300px;
-  box-shadow: 3px 3px 10px rgba(0,0,0,.2);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
 }
 
 .wrapper {
   overflow: hidden;
   position: relative;
-  width: 400px;
-  height: 300px;
+  width: 375px;
+  height: auto;
   z-index: 1;
 }
 
@@ -34,7 +33,7 @@ body {
   display: flex;
   position: relative;
   top: 0;
-  left: -400px;
+  left: -340px;
   width: 10000px;
 }
 
@@ -43,43 +42,33 @@ body {
 }
 
 .slide {
-  width: 400px;
-  height: 300px;
-  cursor: pointer;
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  width: 325px;
+  height: 250px;
+  margin: 0 5px;
+  border-radius: 8px;
+  cursor: pointer;
   transition: all 1s;
-  position: relative;
   background: #FFCF47;
-  border-radius: 2px;
-}
-
-.slider.loaded {
-  .slide:nth-child(2),
-  .slide:nth-child(7) { background: #FFCF47 }
-  .slide:nth-child(1),
-  .slide:nth-child(6) { background: #7ADCEF }
-  .slide:nth-child(3) { background: #3CFF96 }
-  .slide:nth-child(4) { background: #a78df5 }
-  .slide:nth-child(5) { background: #ff8686 }
+  box-shadow: 3px 3px 10px rgba(0,0,0,.2);
 }
 
 .control {
-  position: absolute;
-  top: 50%;
+  position: relative;
   width: 50px;
   height: 50px;
-  background: #fff;
   border-radius: 50px;
-  margin-top: -20px;
+  background: #fff;
   box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
   z-index: 2;
 }
 
 .prev,
 .next {
-  background-size: 22px;
+  background-size: 20px;
   background-position: center;
   background-repeat: no-repeat;
   cursor: pointer;
@@ -87,15 +76,15 @@ body {
 
 .prev {
   background-image: url(https://cdn0.iconfinder.com/data/icons/navigation-set-arrows-part-one/32/ChevronLeft-512.png);
-  left: -20px;
+  left: 22px;
 }
 
 .next {
   background-image: url(https://cdn0.iconfinder.com/data/icons/navigation-set-arrows-part-one/32/ChevronRight-512.png);
-  right: -20px;
+  right: 22px;
 }
 
 .prev:active,
 .next:active {
-  transform: scale(.8);
+  transform: scale(.9);
 }
