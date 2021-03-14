@@ -1,48 +1,63 @@
 class Slide {
   constructor() {
-    this.wrapper = document.querySelector('#slider');
-    this.items = document.querySelector('#slides');
-    this.prev = document.querySelector('#prev');
-    this.next = document.querySelector('#next');
+    // Selecting all the slide elements in the page
+    this.container = document.querySelector('#slider');
+    this.wrapper = this.container.querySelector('#slides');
+    this.slides = this.container.querySelectorAll('.slide');
+    this.prev = this.container.querySelector('#prev');
+    this.next = this.container.querySelector('#next');
 
+    // Setting the initial element positions
+    this.index = 0;
     this.posX1 = 0;
     this.posX2 = 0;
-    this.posInitial;
-    this.posFinal;
-    this.threshold = 100;
+    this.startPos;
+    this.endPos;
+    this.limit = 25;
+    this.allowShift = true;
   
-    this.slides = this.items.querySelectorAll('.slide');
+    // Getting the element properties
+    const marginLeft = Number(
+      window.getComputedStyle(this.slides[0])
+        .marginLeft
+        .split('')[0]
+    );
+    const marginRight = Number(
+      window.getComputedStyle(this.slides[0])
+        .marginRight
+        .split('')[0]
+    );
+    const totalMargin = marginLeft + marginRight;
+    this.slideSize = this.slides[0].offsetWidth + totalMargin;
     this.slidesLength = this.slides.length;
 
-    const marginLeft = Number(window.getComputedStyle(this.slides[0]).marginLeft.split('')[0]);
-    const marginRight = Number(window.getComputedStyle(this.slides[0]).marginRight.split('')[0]);
-    const totalMargin = marginLeft + marginRight;
-    
-    this.slideSize = this.slides[0].offsetWidth + totalMargin;
-
-    this.index = 0;
-    this.allowShift = true;
-    
-    this.cloneFirst = this.slides[0].cloneNode(true);
-    this.cloneFirst.classList.add('clone');
-    this.cloneLast = this.slides[this.slidesLength - 1].cloneNode(true);
-    this.cloneLast.classList.add('clone');
+    // Cloning the slides to make perception of a ininite slider
+    const cloneFirst = this.slides[0].cloneNode(true);
+    cloneFirst.classList.add('clone');
+    const cloneLast = this.slides[this.slidesLength - 1].cloneNode(true);
+    cloneLast.classList.add('clone');
     
     // Clone the first and the last slides
-    this.items.insertAdjacentElement('afterBegin', this.cloneLast);
-    this.items.insertAdjacentElement('beforeEnd', this.cloneFirst);
+    this.wrapper.insertAdjacentElement('afterBegin', cloneLast);
+    this.wrapper.insertAdjacentElement('beforeEnd', cloneFirst);
+    this.container.insertAdjacentHTML(
+      'beforeEnd',
+      '<div class="paging"></div>'
+    );
+    this.paging = this.container.querySelector('.paging');
+    this.pagingLoader();
 
-    // Script initialized the slider
-    this.wrapper.classList.add('loaded');
-
-    // Init the default events on the
+    // Init events in the page
     this.initEvents();
+
+    // Alider is loaded
+    this.container.classList.add('loaded');
   }
   
-  initEvents() {
-    // User dragStart the left mouse button
+  initEvents () {
+    // User press the left mouse button
     function dragStart(event) {
-      this.posInitial = this.items.offsetLeft;
+      this.startPos = this.wrapper.offsetLeft;
       
       if (event.type === 'touchstart') {
         this.posX1 = event.touches[0].clientX;
@@ -50,8 +65,8 @@ class Slide {
       
       if (event.type === 'mousedown') {
         this.posX1 = event.clientX;
-        document.addEventListener('mousemove', dragOut);
-        document.addEventListener('mouseup', dragEnd);
+        this.container.addEventListener('mouseup', dragEnd);
+        this.container.addEventListener('mousemove', dragOut);
       }
     }
 
@@ -67,57 +82,57 @@ class Slide {
         this.posX1 = event.clientX;
       }
       
-      this.items.style.left = (this.items.offsetLeft - this.posX2) + 'px';
+      this.wrapper.style.left = (this.wrapper.offsetLeft - this.posX2) + 'px';
     }
     
-    // User dragEnd the left mouse button
+    // User release the left mouse button
     function dragEnd() {
-      this.posFinal = this.items.offsetLeft;
+      this.endPos = this.wrapper.offsetLeft;
 
-      if (this.posFinal - this.posInitial < -this.threshold) {
+      if (this.endPos - this.startPos < -this.limit) {
         this.shiftSlide(1, 'drag');
-      } else if (this.posFinal - this.posInitial > this.threshold) {
+      } else if (this.endPos - this.startPos > this.limit) {
         this.shiftSlide(-1, 'drag');
       } else {
-        this.items.style.left = (this.posInitial) + 'px';
+        this.wrapper.style.left = (this.startPos) + 'px';
       }
-  
-      document.removeEventListener('mousemove', dragOut);
-      document.removeEventListener('mouseup', dragEnd);
+
+      this.container.removeEventListener('mouseup', dragEnd);
+      this.container.removeEventListener('mousemove', dragOut);
     }
 
-    // bind this in the handler functions
+    // Bind this in the handler functions
     dragStart = dragStart.bind(this);
     dragOut = dragOut.bind(this);
     dragEnd = dragEnd.bind(this);
     
     // Mouse events
-    document.addEventListener('mousedown', dragStart);
+    this.container.addEventListener('mousedown', dragStart);
     
     // Touch events
-    document.addEventListener('touchstart', dragStart);
-    document.addEventListener('touchmove', dragOut);
-    document.addEventListener('touchend', dragEnd);
+    this.container.addEventListener('touchstart', dragStart);
+    this.container.addEventListener('touchmove', dragOut);
+    this.container.addEventListener('touchend', dragEnd);
 
     // Transition events
-    this.wrapper.addEventListener('transitionend', () => this.checkIndex());
+    this.container.addEventListener('transitionend', () => this.checkIndex());
     
     // Click events
     this.prev.addEventListener('click', () => this.shiftSlide(-1));
     this.next.addEventListener('click', () => this.shiftSlide(1));
   }
   
-  shiftSlide(dir, action) {
-    this.items.classList.add('shifting');
+  shiftSlide (dir, action) {
+    this.wrapper.classList.add('shifting');
     
     if (this.allowShift) {
-      if (!action) { this.posInitial = this.items.offsetLeft; }
+      if (!action) { this.startPos = this.wrapper.offsetLeft; }
 
       if (dir === 1) {
-        this.items.style.left = (this.posInitial - this.slideSize) + 'px';
+        this.wrapper.style.left = (this.startPos - this.slideSize) + 'px';
         this.index++;
       } else if (dir === -1) {
-        this.items.style.left = (this.posInitial + this.slideSize) + 'px';
+        this.wrapper.style.left = (this.startPos + this.slideSize) + 'px';
         this.index--;
       }
     };
@@ -126,19 +141,63 @@ class Slide {
   }
     
   checkIndex () {
-    this.items.classList.remove('shifting');
+    this.wrapper.classList.remove('shifting');
 
     if (this.index === -1) {
-      this.items.style.left = -(this.slidesLength * this.slideSize) + 'px';
+      this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
       this.index = this.slidesLength - 1;
     }
 
     if (this.index === this.slidesLength) {
-      this.items.style.left = -(this.slideSize) + 'px';
+      this.wrapper.style.left = -(this.slideSize) + 'px';
       this.index = 0;
     }
     
     this.allowShift = true;
+  }
+
+  shiftPaging (index) {
+    this.wrapper.classList.add('shifting');
+    this.allowShift = false;
+
+    // Somar o index com quantidade de slides à mostra
+    const pagingIndex = index + 1;
+    
+    this.paging.querySelectorAll('.index').forEach((element) => {
+      if (element.classList.contains('active')) {
+        element.classList.remove('active')
+      }
+    });
+
+    if (pagingIndex !== 0) {
+      this.wrapper.style.left = -(pagingIndex * this.slideSize) + 'px';
+    } else {
+      this.wrapper.style.left = -(this.slideSize) + 'px';
+    }
+
+    this.index = pagingIndex;
+  }
+
+  pagingLoader() {
+    // Dividir total de slides por quantidade de slides à mostra
+    const quantity = this.slidesLength / 1;
+
+    for (let i = 0; i < quantity; i++) {
+      const pagingButton = document.createElement("button");
+      const buttonLabel = document.createTextNode(i + 1);
+
+      pagingButton.classList.add('index');
+      if (i === 0) pagingButton.classList.add('active');
+      pagingButton.setAttribute('type', 'button');
+      pagingButton.appendChild(buttonLabel);
+
+      pagingButton.addEventListener('click', () => { 
+        this.shiftPaging(i);
+        pagingButton.classList.add('active');
+      });
+      
+      this.paging.insertAdjacentElement('beforeEnd', pagingButton);
+    }
   }
 }
 
