@@ -37,7 +37,6 @@ body {
 
 .slides {
   top: 0;
-  left: -335px;
   position: relative;
   display: flex;
   width: 10000px;
@@ -69,6 +68,8 @@ body {
   -webkit-user-drag: none;
 }
 
+.slide.clone.hide { visibility: hidden; }
+
 .control {
   position: relative;
   width: 50px;
@@ -80,6 +81,9 @@ body {
   box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
   z-index: 3;
 }
+
+.control.prev.hide,
+.control.next.hide { visibility: hidden; }
 
 .prev,
 .next {
@@ -105,11 +109,31 @@ body {
 }
 
 .paging {
-  top: 100%;
   position: absolute;
-  display: block;
-  width: 200px;
-  height: 30px;
-  background: #ff0;
+  top: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  background: transparent;
   z-index: 3;
+}
+
+.paging .index {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 2px;
+  border: none;
+  border-radius: 50%;
+  background-color: #FFCF47;
+  filter: opacity(.35);
+  outline: none;
+  cursor: pointer;
+}
+
+.paging .index.active {
+  filter: opacity(1);
 }

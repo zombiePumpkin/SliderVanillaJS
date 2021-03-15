@@ -1,19 +1,25 @@
 class Slide {
-  constructor() {
+  constructor(options) {
+    // Default options
+    this.slidesToShow = options.slidesToShow;
+    this.slidesToLoad = options.slidesToLoad;
+    this.showButtons = options.showButtons;
+    this.showPaging = options.showPaging;
+    this.infinite = options.infinite;
+
     // Selecting all the slide elements in the page
     this.container = document.querySelector('#slider');
+    this.view = this.container.querySelector('.wrapper');
     this.wrapper = this.container.querySelector('#slides');
     this.slides = this.container.querySelectorAll('.slide');
-    this.prev = this.container.querySelector('#prev');
-    this.next = this.container.querySelector('#next');
 
     // Setting the initial element positions
     this.index = 0;
     this.posX1 = 0;
     this.posX2 = 0;
-    this.startPos;
-    this.endPos;
-    this.limit = 25;
+    this.startPos = 0;
+    this.endPos = 0;
+    this.limit = 75;
     this.allowShift = true;
   
     // Getting the element properties
@@ -30,6 +36,16 @@ class Slide {
     const totalMargin = marginLeft + marginRight;
     this.slideSize = this.slides[0].offsetWidth + totalMargin;
     this.slidesLength = this.slides.length;
+    
+    // Set the max number of slides to load
+    if (!isNaN(this.slidesToLoad) && this.slidesToLoad !== null) {
+      if (this.slidesToLoad <= this.slidesLength) {
+        this.slides.forEach((element, index) => {
+          if (index >= this.slidesToLoad) element.remove();
+        });
+        this.slidesLength = this.slidesToLoad;
+      }
+    }
 
     // Cloning the slides to make perception of a ininite slider
     const cloneFirst = this.slides[0].cloneNode(true);
@@ -37,20 +53,64 @@ class Slide {
     const cloneLast = this.slides[this.slidesLength - 1].cloneNode(true);
     cloneLast.classList.add('clone');
     
-    // Clone the first and the last slides
     this.wrapper.insertAdjacentElement('afterBegin', cloneLast);
     this.wrapper.insertAdjacentElement('beforeEnd', cloneFirst);
-    this.container.insertAdjacentHTML(
-      'beforeEnd',
-      '<div class="paging"></div>'
-    );
-    this.paging = this.container.querySelector('.paging');
-    this.pagingLoader();
+
+    // Hide clones when infinity mode is off
+    if (!this.infinite) {
+      this.wrapper.querySelectorAll('.clone').forEach((element) => {
+        element.classList.add('hide')
+      });
+    }
+
+    // Adjusting the position of the wrapper
+    this.wrapper.style.left = -(this.slideSize) + 'px';
+
+    // Adjusting the size of the view
+    if (this.infinite) {
+      this.view.style.width = (
+        (this.slides[0].offsetWidth * this.slidesToShow) + 50
+      ) + 'px';
+    } else {
+      this.view.style.width = (this.slideSize * this.slidesToShow) + 'px';
+    }
+
+    // Creating the button navigators
+    if (this.showButtons) {
+      // Previous button
+      this.prev = document.createElement('span');
+      this.prev.setAttribute('id', 'prev');
+      this.prev.classList.add('control', 'prev');
+      if (!this.infinite) this.prev.classList.add('hide');
+      
+      // Next button
+      this.next = document.createElement('span');
+      this.next.setAttribute('id', 'next');
+      this.next.classList.add('control', 'next');
+
+      // Iserting the buttons in slider element
+      this.view.insertAdjacentElement('beforeBegin', this.prev);
+      this.view.insertAdjacentElement('afterEnd', this.next);
+
+      // Init click events
+      this.prev.addEventListener('click', () => this.shiftSlide(-1));
+      this.next.addEventListener('click', () => this.shiftSlide(1));
+    }
+
+    // Creating the paging navigation
+    if (this.showPaging) {
+      this.paging = document.createElement("div");
+      this.paging.classList.add('paging');
+      this.container.insertAdjacentElement('beforeEnd', this.paging);
+
+      // Init paging items and click events
+      this.pagingLoader();
+    }
 
     // Init events in the page
     this.initEvents();
 
-    // Alider is loaded
+    // Slider is loaded
     this.container.classList.add('loaded');
   }
   
@@ -62,7 +122,6 @@ class Slide {
       if (event.type === 'touchstart') {
         this.posX1 = event.touches[0].clientX;
       }
-      
       if (event.type === 'mousedown') {
         this.posX1 = event.clientX;
         this.container.addEventListener('mouseup', dragEnd);
@@ -76,7 +135,6 @@ class Slide {
         this.posX2 = this.posX1 - event.touches[0].clientX;
         this.posX1 = event.touches[0].clientX;
       }
-
       if (event.type === 'mousemove') {
         this.posX2 = this.posX1 - event.clientX;
         this.posX1 = event.clientX;
@@ -116,15 +174,11 @@ class Slide {
 
     // Transition events
     this.container.addEventListener('transitionend', () => this.checkIndex());
-    
-    // Click events
-    this.prev.addEventListener('click', () => this.shiftSlide(-1));
-    this.next.addEventListener('click', () => this.shiftSlide(1));
   }
   
   shiftSlide (dir, action) {
     this.wrapper.classList.add('shifting');
-    
+
     if (this.allowShift) {
       if (!action) { this.startPos = this.wrapper.offsetLeft; }
 
@@ -136,21 +190,69 @@ class Slide {
         this.index--;
       }
     };
-    
+
     this.allowShift = false;
   }
     
   checkIndex () {
     this.wrapper.classList.remove('shifting');
 
-    if (this.index === -1) {
-      this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
-      this.index = this.slidesLength - 1;
+    if (this.infinite) {
+      if (this.index === -1) {
+        this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
+        this.index = this.slidesLength - 1;
+      }
+
+      if (this.index === this.slidesLength) {
+        this.wrapper.style.left = -(this.slideSize) + 'px';
+        this.index = 0;
+      }
+    } else {
+      if (this.index === -1) {
+        this.wrapper.style.left = -(this.slideSize) + 'px';
+        this.index = 0;
+      }
+
+      if (this.index === this.slidesLength) {
+        this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
+        this.index = this.slidesLength - 1;
+      }
+
+      if (this.showButtons) {
+        if (this.index === 0) { 
+          this.prev.classList.add('hide');
+        }
+        
+        if (this.index === this.slidesLength - 1) {
+          this.next.classList.add('hide');
+        }
+        
+        if (this.index !== 0) {
+          if (this.prev.classList.contains('hide')) {
+            this.prev.classList.remove('hide');
+          }
+        }
+        
+        if (this.index !== this.slidesLength - 1) {
+          if (this.next.classList.contains('hide')) {
+            this.next.classList.remove('hide');
+          }
+        }
+      }
     }
 
-    if (this.index === this.slidesLength) {
-      this.wrapper.style.left = -(this.slideSize) + 'px';
-      this.index = 0;
+    if (this.showPaging) {
+      this.paging.querySelectorAll('.index').forEach((element, index) => { 
+        if (index === this.index) {
+          if (!element.classList.contains('active')) { 
+            element.classList.add('active');
+          }
+        } else {
+          if (element.classList.contains('active')) {
+            element.classList.remove('active');
+          }
+        }
+      });
     }
     
     this.allowShift = true;
@@ -158,50 +260,39 @@ class Slide {
 
   shiftPaging (index) {
     this.wrapper.classList.add('shifting');
-    this.allowShift = false;
 
-    // Somar o index com quantidade de slides à mostra
-    const pagingIndex = index + 1;
-    
-    this.paging.querySelectorAll('.index').forEach((element) => {
-      if (element.classList.contains('active')) {
-        element.classList.remove('active')
-      }
-    });
-
-    if (pagingIndex !== 0) {
-      this.wrapper.style.left = -(pagingIndex * this.slideSize) + 'px';
+    if (index !== 0) {
+      this.wrapper.style.left = -((index + 1) * this.slideSize) + 'px';
     } else {
       this.wrapper.style.left = -(this.slideSize) + 'px';
     }
 
-    this.index = pagingIndex;
+    this.index = index;
+    this.allowShift = false;
   }
 
   pagingLoader() {
-    // Dividir total de slides por quantidade de slides à mostra
-    const quantity = this.slidesLength / 1;
+    for (let i = 0; i < this.slidesLength; i++) {
+      const pagingItem = document.createElement("span");
 
-    for (let i = 0; i < quantity; i++) {
-      const pagingButton = document.createElement("button");
-      const buttonLabel = document.createTextNode(i + 1);
+      pagingItem.classList.add('index');
+      if (i === 0) pagingItem.classList.add('active');
 
-      pagingButton.classList.add('index');
-      if (i === 0) pagingButton.classList.add('active');
-      pagingButton.setAttribute('type', 'button');
-      pagingButton.appendChild(buttonLabel);
-
-      pagingButton.addEventListener('click', () => { 
+      pagingItem.addEventListener('click', () => { 
         this.shiftPaging(i);
-        pagingButton.classList.add('active');
       });
       
-      this.paging.insertAdjacentElement('beforeEnd', pagingButton);
+      this.paging.insertAdjacentElement('beforeEnd', pagingItem);
     }
   }
 }
 
-const slide = new Slide();
-
-// slidesToLoad = 9
-// slidesToShow = 3
+const slide = new Slide(
+  {
+    slidesToLoad: 5,
+    slidesToShow: 2,
+    showButtons: false,
+    showPaging: true,
+    infinite: true
+  }
+);
