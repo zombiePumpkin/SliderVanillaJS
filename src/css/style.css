@@ -12,7 +12,7 @@ body {
   font-size: 22px;
 }
 
-.slider {
+#container {
   position: relative;
   display: flex;
   flex-direction: row;
@@ -27,7 +27,7 @@ body {
   -webkit-user-drag: none;
 }
 
-.wrapper {
+#view {
   overflow: hidden;
   position: relative;
   width: 375px;
@@ -35,7 +35,7 @@ body {
   z-index: 2;
 }
 
-.slides {
+#wrapper {
   top: 0;
   position: relative;
   display: flex;
@@ -44,8 +44,8 @@ body {
   z-index: 1;
 }
 
-.slides.shifting {
-  transition: left .2s ease-out;
+#wrapper.shifting {
+  transition: left .3s ease-out;
 }
 
 .slide {

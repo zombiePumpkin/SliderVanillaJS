@@ -8,9 +8,9 @@ class Slide {
     this.infinite = options.infinite;
 
     // Selecting all the slide elements in the page
-    this.container = document.querySelector('#slider');
-    this.view = this.container.querySelector('.wrapper');
-    this.wrapper = this.container.querySelector('#slides');
+    this.container = document.querySelector('#container');
+    this.view = this.container.querySelector('#view');
+    this.wrapper = this.container.querySelector('#wrapper');
     this.slides = this.container.querySelectorAll('.slide');
 
     // Setting the initial element positions
@@ -19,7 +19,7 @@ class Slide {
     this.posX2 = 0;
     this.startPos = 0;
     this.endPos = 0;
-    this.limit = 75;
+    this.limit = 100;
     this.allowShift = true;
   
     // Getting the element properties
@@ -104,7 +104,7 @@ class Slide {
       this.container.insertAdjacentElement('beforeEnd', this.paging);
 
       // Init paging items and click events
-      this.pagingLoader();
+      this.pagingBuilder();
     }
 
     // Init events in the page
@@ -175,6 +175,40 @@ class Slide {
     // Transition events
     this.container.addEventListener('transitionend', () => this.checkIndex());
   }
+
+  hideButton() {
+    if (this.index === 0) { 
+      this.prev.classList.add('hide');
+    }
+    
+    if (this.index === this.slidesLength - 1) {
+      this.next.classList.add('hide');
+    }
+    
+    if (this.index !== 0) {
+      if (this.prev.classList.contains('hide')) {
+        this.prev.classList.remove('hide');
+      }
+    }
+    
+    if (this.index !== this.slidesLength - 1) {
+      if (this.next.classList.contains('hide')) {
+        this.next.classList.remove('hide');
+      }
+    }
+  }
+
+  shiftLimit() {
+    if (this.index === -1) {
+      this.wrapper.style.left = -(this.slideSize) + 'px';
+      this.index = 0;
+    }
+
+    if (this.index === this.slidesLength) {
+      this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
+      this.index = this.slidesLength - 1;
+    }
+  }
   
   shiftSlide (dir, action) {
     this.wrapper.classList.add('shifting');
@@ -189,73 +223,45 @@ class Slide {
         this.wrapper.style.left = (this.startPos + this.slideSize) + 'px';
         this.index--;
       }
+
+      if (!this.infinite) this.shiftLimit();
     };
 
     this.allowShift = false;
   }
-    
+
   checkIndex () {
     this.wrapper.classList.remove('shifting');
 
-    if (this.infinite) {
-      if (this.index === -1) {
-        this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
-        this.index = this.slidesLength - 1;
-      }
-
-      if (this.index === this.slidesLength) {
-        this.wrapper.style.left = -(this.slideSize) + 'px';
-        this.index = 0;
-      }
-    } else {
-      if (this.index === -1) {
-        this.wrapper.style.left = -(this.slideSize) + 'px';
-        this.index = 0;
-      }
-
-      if (this.index === this.slidesLength) {
-        this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
-        this.index = this.slidesLength - 1;
-      }
-
-      if (this.showButtons) {
-        if (this.index === 0) { 
-          this.prev.classList.add('hide');
-        }
-        
-        if (this.index === this.slidesLength - 1) {
-          this.next.classList.add('hide');
-        }
-        
-        if (this.index !== 0) {
-          if (this.prev.classList.contains('hide')) {
-            this.prev.classList.remove('hide');
-          }
-        }
-        
-        if (this.index !== this.slidesLength - 1) {
-          if (this.next.classList.contains('hide')) {
-            this.next.classList.remove('hide');
-          }
-        }
-      }
+    if (this.index === -1) {
+      this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
+      this.index = this.slidesLength - 1;
     }
 
-    if (this.showPaging) {
-      this.paging.querySelectorAll('.index').forEach((element, index) => { 
-        if (index === this.index) {
-          if (!element.classList.contains('active')) { 
-            element.classList.add('active');
-          }
-        } else {
-          if (element.classList.contains('active')) {
-            element.classList.remove('active');
-          }
-        }
-      });
+    if (this.index === this.slidesLength) {
+      this.wrapper.style.left = -(this.slideSize) + 'px';
+      this.index = 0;
     }
+
+    if (this.showPaging) this.updatePagingIndex();
     
+    if (this.showButtons) this.hideButton();
+
     this.allowShift = true;
+  }
+
+  updatePagingIndex() {
+    this.paging.querySelectorAll('.index').forEach((element, index) => { 
+      if (index === this.index) {
+        if (!element.classList.contains('active')) { 
+          element.classList.add('active');
+        }
+      } else {
+        if (element.classList.contains('active')) {
+          element.classList.remove('active');
+        }
+      }
+    });
   }
 
   shiftPaging (index) {
@@ -271,7 +277,7 @@ class Slide {
     this.allowShift = false;
   }
 
-  pagingLoader() {
+  pagingBuilder() {
     for (let i = 0; i < this.slidesLength; i++) {
       const pagingItem = document.createElement("span");
 
@@ -289,10 +295,10 @@ class Slide {
 
 const slide = new Slide(
   {
-    slidesToLoad: 5,
+    slidesToLoad: 4,
     slidesToShow: 2,
-    showButtons: false,
+    showButtons: true,
     showPaging: true,
-    infinite: true
+    infinite: false
   }
 );
