@@ -4,6 +4,7 @@ class Slider {
     // Parameters destructuring
     const { 
       slidesToShow,
+      slidesToShift,
       slidesToLoad,
       showButtons,
       showPaging,
@@ -19,6 +20,7 @@ class Slider {
 
     // Slider config options
     this.slidesToShow = slidesToShow;
+    this.slidesToShift = slidesToShift || 1;
     this.slidesToLoad = slidesToLoad;
     this.showButtons = showButtons;
     this.showPaging = showPaging;
@@ -40,21 +42,12 @@ class Slider {
     this.allowShift = true;
 
     // Main slider element properties
-    const marginLeft = Number(
-      getComputedStyle(this.slides[0])
-        .marginLeft
-        .split('')[0]
+    this.slideSize = (
+      Number(getComputedStyle(this.slides[0]).marginLeft.replace('px', '')) +
+      Number(getComputedStyle(this.slides[0]).marginRight.replace('px', '')) +
+      Number(getComputedStyle(this.slides[0]).width.replace('px', ''))
     );
 
-    const marginRight = Number(
-      getComputedStyle(this.slides[0])
-        .marginRight
-        .split('')[0]
-    );
-
-    const totalMargin = marginLeft + marginRight;
-
-    this.slideSize = this.slides[0].offsetWidth + totalMargin;
     this.slidesLength = this.slides.length;
 
     // Set the total size of the wrapper
@@ -70,39 +63,10 @@ class Slider {
       }
     }
 
-    // Cloning the slides to make perception of a ininite slider
-    if (this.infinite) {
-      const cloneFirst = this.slides[0].cloneNode(true);
-      cloneFirst.classList.add('clone');
-      const cloneLast = this.slides[this.slidesLength - 1].cloneNode(true);
-      cloneLast.classList.add('clone');
-
-      this.wrapper.insertAdjacentElement('afterbegin', cloneLast);
-      this.wrapper.insertAdjacentElement('beforeend', cloneFirst);
-    }
-
-    // Hide clones when infinity mode is off
-    if (!this.infinite) {
-      this.wrapper.querySelectorAll('.clone').forEach((element) => {
-        element.classList.add('hide')
-      });
-    }
-
-    // Adjusting the position of the wrapper
-    if (this.infinite) {
-      this.wrapper.style.left = -(this.slideSize) + 'px';
-    } else {
-      this.wrapper.style.left = '0px';
-    }
+    this.wrapper.style.left = '0px';
 
     // Adjusting the size of the view
-    if (this.infinite) {
-      this.view.style.width = (
-        (this.slides[0].offsetWidth * this.slidesToShow) + 50
-      ) + 'px';
-    } else {
-      this.view.style.width = (this.slideSize * this.slidesToShow) + 'px';
-    }
+    this.view.style.width = (this.slideSize * this.slidesToShow) + 'px';
 
     // Creating the button navigators
     if (this.showButtons) {
@@ -227,11 +191,11 @@ class Slider {
   }
 
   hideButton() {
-    if (this.index === 0) {
+    if (this.index === 0 && !this.infinite) {
       if (this.prev) this.prev.classList.add('hide');
-    } else if (this.index === this.slidesLength - 1) {
+    } else if (this.index === this.slidesLength - 1 && !this.infinite) {
       if (this.next) this.next.classList.add('hide');
-    } else {
+    } else if (!this.infinite) {
       if (this.prev && this.prev.classList.contains('hide')) {
         this.prev.classList.remove('hide');
       }
@@ -242,12 +206,23 @@ class Slider {
   }
 
   shiftLimit() {
-    if (this.index === -1) {
-      this.wrapper.style.left = '0px';
-      this.index = 0;
-    } else if (this.index === this.slidesLength) {
-      this.wrapper.style.left = -((this.slidesLength - 1) * this.slideSize) + 'px';
-      this.index = this.slidesLength - 1;
+    if (this.infinite) {
+      if (this.index < 0) {
+        this.wrapper.style.left = -((this.slidesLength - 1) * this.slideSize) + 'px';
+        this.index = this.slidesLength - 1;
+      } else if (this.index >= this.slidesLength) {
+        this.wrapper.style.left = '-0px';
+        this.index = 0;
+      }
+
+    } else {
+      if (this.index < 0) {
+        this.wrapper.style.left = '0px';
+        this.index = 0;
+      } else if (this.index >= this.slidesLength) {
+        this.wrapper.style.left = -((this.slidesLength - 1) * this.slideSize) + 'px';
+        this.index = this.slidesLength - 1;
+      }
     }
   }
 
@@ -258,40 +233,37 @@ class Slider {
       if (!action) { this.startPos = this.wrapper.offsetLeft; }
 
       if (dir === 1) {
-        this.wrapper.style.left = (this.startPos - this.slideSize) + 'px';
-        this.index++;
+        // this.wrapper.style.left = (this.startPos - this.slideSize) + 'px';
+        this.wrapper.style.left = (
+          this.startPos - (this.slideSize * this.slidesToShift)
+        ) + 'px'
+        this.index += this.slidesToShift;
       } else if (dir === -1) {
-        this.wrapper.style.left = (this.startPos + this.slideSize) + 'px';
-        this.index--;
+        // this.wrapper.style.left = (this.startPos + this.slideSize) + 'px';
+        this.wrapper.style.left = (
+          this.startPos + (this.slideSize * this.slidesToShift)
+        ) + 'px';
+        this.index -= this.slidesToShift;
       }
-
-      if (!this.infinite) this.shiftLimit();
     }
 
     this.allowShift = false;
+
+    this.shiftLimit();
   }
 
   checkIndex() {
     this.wrapper.classList.remove('shifting');
 
-    if (this.index === -1) {
-      this.wrapper.style.left = -(this.slidesLength * this.slideSize) + 'px';
-      this.index = this.slidesLength - 1;
-    } else if (this.index === this.slidesLength) {
-      this.wrapper.style.left = -(this.slideSize) + 'px';
-      this.index = 0;
-    }
-
     if (this.showPaging) this.updatePagingIndex();
 
     if (this.showButtons) this.hideButton();
 
-    this.allowShift = true;
-
-    let leftPosition = parseInt(this.wrapper.style.left);
-
-    if (leftPosition < 0) leftPosition = -(leftPosition);
+    const leftPosition = parseInt(this.wrapper.style.left);
+    
     if (leftPosition % this.slideSize !== 0) this.shiftPaging(this.index);
+    
+    this.allowShift = true;
   }
 
   updatePagingIndex() {
@@ -313,19 +285,17 @@ class Slider {
   shiftPaging(index) {
     this.wrapper.classList.add('shifting');
 
-    if (this.infinite) {
-      if (index !== 0) {
-        this.wrapper.style.left = -((index + 1) * this.slideSize) + 'px';
-      } else {
-        this.wrapper.style.left = -(this.slideSize) + 'px';
-      }
-    } else {
-      if (index !== 0) {
-        this.wrapper.style.left = -(index * this.slideSize) + 'px';
-      } else {
-        this.wrapper.style.left = '0px';
-      }
+    if (index < 0 && this.infinite) {
+      index = this.slidesLength - 1;
+    } else if (index >= this.slidesLength && this.infinite) {
+      index = 0;
+    } else if (index < 0) {
+      index = 0;
+    } else if (index >= this.slidesLength) {
+      index = this.slidesLength - 1;
     }
+
+    this.wrapper.style.left = -(index * this.slideSize) + 'px';
 
     this.index = index;
     this.allowShift = false;
@@ -352,6 +322,7 @@ class Slider {
 const slider = new Slider(
   {
     slidesToShow: 3,
+    slidesToShift: 3,
     slidesToLoad: 5,
     showButtons: true,
     showPaging: true,
