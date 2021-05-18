@@ -1,45 +1,44 @@
-// Main class
-class Slider {
-  constructor(options, sliderElements) {
-    // Parameters destructuring
-    const { 
-      slidesToShow,
-      slidesToShift,
-      slidesToLoad,
-      showButtons,
-      showPaging,
-      infinite
-    } = options;
+yv = {};
 
-    const { 
-      container,
-      view,
-      wrapper,
-      slides 
-    } = sliderElements;
+// Main class
+yv.slider = {
+  // Parameters
+  slidesToShow: 1,
+  slidesToShift: 1,
+  slidesToLoad: 1,
+  showButtons: false,
+  showPaging: false,
+  infinite: false,
+  container: 'undefined',
+  view: 'undefined',
+  wrapper: 'undefined',
+  slides: [],
+  index: 0,
+  posX1: 0,
+  posX2: 0,
+  startPos: 0,
+  endPos: 0,
+  limit: 50,
+  allowShift: true,
+  // Functions
+  // Init slider configs
+  initConfig: function(options, sliderElements) {
+    console.log(options);
+    console.log(sliderElements);
 
     // Slider config options
-    this.slidesToShow = slidesToShow;
-    this.slidesToShift = slidesToShift || 1;
-    this.slidesToLoad = slidesToLoad;
-    this.showButtons = showButtons;
-    this.showPaging = showPaging;
-    this.infinite = infinite;
+    this.slidesToShow = options.slidesToShow;
+    this.slidesToShift = options.slidesToShift || 1;
+    this.slidesToLoad = options.slidesToLoad;
+    this.showButtons = options.showButtons;
+    this.showPaging = options.showPaging;
+    this.infinite = options.infinite;
 
     // Main slider elements
-    this.container = document.querySelector(container);
-    this.view = document.querySelector(view);
-    this.wrapper = document.querySelector(wrapper);
-    this.slides = this.wrapper.querySelectorAll(slides);
-
-    // Initial slider position values
-    this.index = 0;
-    this.posX1 = 0;
-    this.posX2 = 0;
-    this.startPos = 0;
-    this.endPos = 0;
-    this.limit = 50;
-    this.allowShift = true;
+    this.container = document.querySelector(sliderElements.container);
+    this.view = document.querySelector(sliderElements.view);
+    this.wrapper = document.querySelector(sliderElements.wrapper);
+    this.slides = this.wrapper.querySelectorAll(sliderElements.slides);
 
     // Main slider element properties
     this.slideSize = (
@@ -47,7 +46,8 @@ class Slider {
       Number(getComputedStyle(this.slides[0]).marginRight.replace('px', '')) +
       Number(getComputedStyle(this.slides[0]).width.replace('px', ''))
     );
-
+    
+    // Set the total amount of slides
     this.slidesLength = this.slides.length;
 
     // Set the total size of the wrapper
@@ -57,12 +57,13 @@ class Slider {
     if (!isNaN(this.slidesToLoad) && this.slidesToLoad !== null) {
       if (this.slidesToLoad <= this.slidesLength) {
         for (let i = 0; i < this.slidesLength; i++) {
-          if (i >= this.slidesToLoad) this.slides[0].remove();
+          if (i >= this.slidesToLoad) this.slides[i].remove();
         }
         this.slidesLength = this.slidesToLoad;
       }
     }
 
+    // Set initial position of the slider
     this.wrapper.style.left = '0px';
 
     // Adjusting the size of the view
@@ -87,7 +88,6 @@ class Slider {
 
       // Init click events
       this.prev.addEventListener('click', () => this.shiftSlide(-1));
-
       this.next.addEventListener('click', () => this.shiftSlide(1));
     }
 
@@ -96,6 +96,7 @@ class Slider {
       this.paging = document.createElement("div");
       this.paging.classList.add('paging');
 
+      // Insert paging in the slider container
       this.container.insertAdjacentElement('beforeend', this.paging);
 
       // Init paging items and click events
@@ -104,10 +105,10 @@ class Slider {
 
     // Slider is loaded
     this.container.classList.add('loaded');
-  }
-
-  initKeyBoardEvents(...elementNames) {
-    // Fix the tab button press on the end of inputs inside forms
+  },
+  // Fix problems with keyboard events
+  initKeysEvents(...elementNames) {
+    // Fix the tab press on the end of inputs inside forms inside the slider
     this.container.addEventListener('keydown', (event) => {
       if (event.key === 'Tab') {
         const eventInput = event.target;
@@ -120,10 +121,10 @@ class Slider {
         })
       }
     })
-  }
-
-  initEvents() {
-    // User press the left mouse button
+  },
+  // Init drag events with mouse tochscreen
+  initDragEvents() {
+    // Event triggered on press the left mouse button/touch the screen
     let dragStart = (event) => {
       this.startPos = this.wrapper.offsetLeft;
 
@@ -139,8 +140,7 @@ class Slider {
         document.addEventListener('mousemove', dragOut);
       }
     }
-
-    // User move the mouse on the screen
+    // Event triggered on move the mouse/finger across the screen
     let dragOut = (event) => {
       if (event.type === 'touchmove') {
         const touchMove = event;
@@ -157,8 +157,8 @@ class Slider {
       this.wrapper.style.left = (this.wrapper.offsetLeft - this.posX2) + 'px';
     }
 
-    // User release the left mouse button
-    let dragEnd = ()  => {
+    // Event triggered when user release the mouse button/finger from the screen
+    let dragEnd = () => {
       this.endPos = this.wrapper.offsetLeft;
 
       if (this.endPos - this.startPos < -this.limit) {
@@ -188,9 +188,9 @@ class Slider {
 
     // Transition events
     this.container.addEventListener('transitionend', () => this.checkIndex());
-  }
-
-  hideButton() {
+  },
+  // Hide slider buttons on the screen depending on position
+  hideButton: function() {
     if (this.index === 0 && !this.infinite) {
       if (this.prev) this.prev.classList.add('hide');
     } else if (this.index === this.slidesLength - 1 && !this.infinite) {
@@ -203,12 +203,14 @@ class Slider {
         this.next.classList.remove('hide');
       }
     }
-  }
-
-  shiftLimit() {
+  },
+  // Prevents the slider from going over the limit
+  shiftLimit: function() {
     if (this.infinite) {
       if (this.index < 0) {
-        this.wrapper.style.left = -((this.slidesLength - 1) * this.slideSize) + 'px';
+        this.wrapper.style.left = -(
+          (this.slidesLength - this.slidesToShift) * this.slideSize
+        ) + 'px';
         this.index = this.slidesLength - 1;
       } else if (this.index >= this.slidesLength) {
         this.wrapper.style.left = '-0px';
@@ -220,12 +222,14 @@ class Slider {
         this.wrapper.style.left = '0px';
         this.index = 0;
       } else if (this.index >= this.slidesLength) {
-        this.wrapper.style.left = -((this.slidesLength - 1) * this.slideSize) + 'px';
+        this.wrapper.style.left = -(
+          (this.slidesLength - 1) * this.slideSize
+        ) + 'px';
         this.index = this.slidesLength - 1;
       }
     }
-  }
-
+  },
+  // Change the slider depending on the drag/click button event
   shiftSlide(dir, action) {
     this.wrapper.classList.add('shifting');
 
@@ -233,13 +237,12 @@ class Slider {
       if (!action) { this.startPos = this.wrapper.offsetLeft; }
 
       if (dir === 1) {
-        // this.wrapper.style.left = (this.startPos - this.slideSize) + 'px';
         this.wrapper.style.left = (
           this.startPos - (this.slideSize * this.slidesToShift)
         ) + 'px'
         this.index += this.slidesToShift;
+
       } else if (dir === -1) {
-        // this.wrapper.style.left = (this.startPos + this.slideSize) + 'px';
         this.wrapper.style.left = (
           this.startPos + (this.slideSize * this.slidesToShift)
         ) + 'px';
@@ -250,8 +253,8 @@ class Slider {
     this.allowShift = false;
 
     this.shiftLimit();
-  }
-
+  },
+  // Event triggered after slide animations
   checkIndex() {
     this.wrapper.classList.remove('shifting');
 
@@ -264,8 +267,8 @@ class Slider {
     if (leftPosition % this.slideSize !== 0) this.shiftPaging(this.index);
     
     this.allowShift = true;
-  }
-
+  },
+  // Update index when pass sliders
   updatePagingIndex() {
     if (this.paging) {
       this.paging.querySelectorAll('.index').forEach((element, index) => {
@@ -280,8 +283,8 @@ class Slider {
         }
       });
     }
-  }
-
+  },
+  // Event triggered on click the paging buttons
   shiftPaging(index) {
     this.wrapper.classList.add('shifting');
 
@@ -299,8 +302,8 @@ class Slider {
 
     this.index = index;
     this.allowShift = false;
-  }
-
+  },
+  // Create paging ordenation & insert on the slider container
   pagingBuilder() {
     for (let i = 0; i < this.slidesLength; i++) {
       const pagingItem = document.createElement("span");
@@ -319,14 +322,14 @@ class Slider {
   }
 }
 
-const slider = new Slider(
+yv.slider.initConfig(
   {
     slidesToShow: 3,
     slidesToShift: 3,
-    slidesToLoad: 5,
+    slidesToLoad: 6,
     showButtons: true,
     showPaging: true,
-    infinite: false
+    infinite: true
   },
   {
     container: '#container',
@@ -336,4 +339,4 @@ const slider = new Slider(
   }
 );
 
-slider.initEvents();
+yv.slider.initDragEvents();
