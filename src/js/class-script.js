@@ -196,42 +196,64 @@ class Slider {
 
   // Hide slider buttons on the screen depending on position
   hideButton() {
-    if (this.index === 0 && !this.infinite) {
-      if (this.prev) this.prev.classList.add('hide');
-    } else if (this.index === this.slidesLength - 1 && !this.infinite) {
-      if (this.next) this.next.classList.add('hide');
-    } else if (!this.infinite) {
-      if (this.prev && this.prev.classList.contains('hide')) {
-        this.prev.classList.remove('hide');
-      }
-      if (this.next && this.next.classList.contains('hide')) {
-        this.next.classList.remove('hide');
+    if (!this.infinite) {
+      if (this.index === 0) {
+        if (this.prev) this.prev.classList.add('hide');
+
+      } else if (this.index + this.slidesToShift >= this.slidesLength) {
+        if (this.next) this.next.classList.add('hide');
+
+      } else {
+        if (this.prev && this.prev.classList.contains('hide')) {
+          this.prev.classList.remove('hide');
+        }
+
+        if (this.next && this.next.classList.contains('hide')) {
+          this.next.classList.remove('hide');
+        }
       }
     }
   }
 
   // Prevents the slider from going over the limit
-  shiftLimit() {
+  shiftLimit () {
     if (this.infinite) {
       if (this.index < 0) {
-        this.wrapper.style.left = -(
-          (this.slidesLength - this.slidesToShift) * this.slideSize
-        ) + 'px';
-        this.index = this.slidesLength - 1;
+        if (this.slidesLength % this.slidesToShift !== 0) {
+          this.wrapper.style.left = -(
+            (this.slidesLength - (this.slidesLength % this.slidesToShift)) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - (this.slidesLength % this.slidesToShift);
+        } else {
+          this.wrapper.style.left = -(
+            (this.slidesLength - this.slidesToShift) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - this.slidesToShift;
+        }
       } else if (this.index >= this.slidesLength) {
-        this.wrapper.style.left = '-0px';
+        this.wrapper.style.left = '0px';
         this.index = 0;
       }
-
     } else {
       if (this.index < 0) {
         this.wrapper.style.left = '0px';
         this.index = 0;
       } else if (this.index >= this.slidesLength) {
-        this.wrapper.style.left = -(
-          (this.slidesLength - 1) * this.slideSize
-        ) + 'px';
-        this.index = this.slidesLength - 1;
+        if (this.slidesLength % this.slidesToShift !== 0) {
+          this.wrapper.style.left = -(
+            (this.slidesLength - (this.slidesLength % this.slidesToShift)) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - (this.slidesLength % this.slidesToShift);
+        } else {
+          this.wrapper.style.left = -(
+            (this.slidesLength - this.slidesToShift) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - this.slidesToShift;
+        }
       }
     }
   }
@@ -244,13 +266,11 @@ class Slider {
       if (!action) { this.startPos = this.wrapper.offsetLeft; }
 
       if (dir === 1) {
-        // this.wrapper.style.left = (this.startPos - this.slideSize) + 'px';
         this.wrapper.style.left = (
           this.startPos - (this.slideSize * this.slidesToShift)
         ) + 'px'
         this.index += this.slidesToShift;
       } else if (dir === -1) {
-        // this.wrapper.style.left = (this.startPos + this.slideSize) + 'px';
         this.wrapper.style.left = (
           this.startPos + (this.slideSize * this.slidesToShift)
         ) + 'px';
@@ -281,8 +301,12 @@ class Slider {
   // Update index when pass sliders
   updatePagingIndex() {
     if (this.paging) {
-      this.paging.querySelectorAll('.index').forEach((element, index) => {
-        if (index === this.index) {
+      this.paging.querySelectorAll('.index').forEach((element) => {
+        const elementIndex = Number(
+          element.classList.toString().replace(/\D/g, '')
+        );
+
+        if (elementIndex === this.index) {
           if (!element.classList.contains('active')) {
             element.classList.add('active');
           }
@@ -318,17 +342,20 @@ class Slider {
   // Create paging ordenation & insert on the slider container
   pagingBuilder() {
     for (let i = 0; i < this.slidesLength; i++) {
-      const pagingItem = document.createElement("span");
+      if (i % this.slidesToShift === 0) {
+        const pagingItem = document.createElement("span");
 
-      pagingItem.classList.add('index');
-      if (i === 0) pagingItem.classList.add('active');
+        pagingItem.classList.add('index');
+        pagingItem.classList.add(i);
+        if (i === 0) pagingItem.classList.add('active');
 
-      pagingItem.addEventListener('click', () => {
-        this.shiftPaging(i);
-      });
+        pagingItem.addEventListener('click', () => {
+          this.shiftPaging(i);
+        });
 
-      if (this.paging) {
-        this.paging.insertAdjacentElement('beforeend', pagingItem);
+        if (this.paging) {
+          this.paging.insertAdjacentElement('beforeend', pagingItem);
+        }
       }
     }
   }
@@ -336,12 +363,12 @@ class Slider {
 
 const slider = new Slider(
   {
-    slidesToShow: 3,
-    slidesToShift: 3,
-    slidesToLoad: 5,
+    slidesToShow: 4,
+    slidesToShift: 2,
+    slidesToLoad: 6,
     showButtons: true,
     showPaging: true,
-    infinite: false
+    infinite: true
   },
   {
     container: '#container',

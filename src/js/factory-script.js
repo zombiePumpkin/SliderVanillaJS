@@ -23,9 +23,6 @@ yv.slider = {
   // Functions
   // Init slider configs
   initConfig: function(options, sliderElements) {
-    console.log(options);
-    console.log(sliderElements);
-
     // Slider config options
     this.slidesToShow = options.slidesToShow;
     this.slidesToShift = options.slidesToShift || 1;
@@ -191,16 +188,21 @@ yv.slider = {
   },
   // Hide slider buttons on the screen depending on position
   hideButton: function() {
-    if (this.index === 0 && !this.infinite) {
-      if (this.prev) this.prev.classList.add('hide');
-    } else if (this.index === this.slidesLength - 1 && !this.infinite) {
-      if (this.next) this.next.classList.add('hide');
-    } else if (!this.infinite) {
-      if (this.prev && this.prev.classList.contains('hide')) {
-        this.prev.classList.remove('hide');
-      }
-      if (this.next && this.next.classList.contains('hide')) {
-        this.next.classList.remove('hide');
+    if (!this.infinite) {
+      if (this.index === 0) {
+        if (this.prev) this.prev.classList.add('hide');
+
+      } else if (this.index + this.slidesToShift >= this.slidesLength) {
+        if (this.next) this.next.classList.add('hide');
+
+      } else {
+        if (this.prev && this.prev.classList.contains('hide')) {
+          this.prev.classList.remove('hide');
+        }
+
+        if (this.next && this.next.classList.contains('hide')) {
+          this.next.classList.remove('hide');
+        }
       }
     }
   },
@@ -208,29 +210,46 @@ yv.slider = {
   shiftLimit: function() {
     if (this.infinite) {
       if (this.index < 0) {
-        this.wrapper.style.left = -(
-          (this.slidesLength - this.slidesToShift) * this.slideSize
-        ) + 'px';
-        this.index = this.slidesLength - 1;
+        if (this.slidesLength % this.slidesToShift !== 0) {
+          this.wrapper.style.left = -(
+            (this.slidesLength - (this.slidesLength % this.slidesToShift)) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - (this.slidesLength % this.slidesToShift);
+        } else {
+          this.wrapper.style.left = -(
+            (this.slidesLength - this.slidesToShift) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - this.slidesToShift;
+        }
       } else if (this.index >= this.slidesLength) {
-        this.wrapper.style.left = '-0px';
+        this.wrapper.style.left = '0px';
         this.index = 0;
       }
-
     } else {
       if (this.index < 0) {
         this.wrapper.style.left = '0px';
         this.index = 0;
       } else if (this.index >= this.slidesLength) {
-        this.wrapper.style.left = -(
-          (this.slidesLength - 1) * this.slideSize
-        ) + 'px';
-        this.index = this.slidesLength - 1;
+        if (this.slidesLength % this.slidesToShift !== 0) {
+          this.wrapper.style.left = -(
+            (this.slidesLength - (this.slidesLength % this.slidesToShift)) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - (this.slidesLength % this.slidesToShift);
+        } else {
+          this.wrapper.style.left = -(
+            (this.slidesLength - this.slidesToShift) * this.slideSize
+          ) + 'px';
+
+          this.index = this.slidesLength - this.slidesToShift;
+        }
       }
     }
   },
   // Change the slider depending on the drag/click button event
-  shiftSlide(dir, action) {
+  shiftSlide: function(dir, action) {
     this.wrapper.classList.add('shifting');
 
     if (this.allowShift) {
@@ -241,7 +260,6 @@ yv.slider = {
           this.startPos - (this.slideSize * this.slidesToShift)
         ) + 'px'
         this.index += this.slidesToShift;
-
       } else if (dir === -1) {
         this.wrapper.style.left = (
           this.startPos + (this.slideSize * this.slidesToShift)
@@ -272,7 +290,11 @@ yv.slider = {
   updatePagingIndex() {
     if (this.paging) {
       this.paging.querySelectorAll('.index').forEach((element, index) => {
-        if (index === this.index) {
+        const elementIndex = Number(
+          element.classList.toString().replace(/\D/g, '')
+        );
+        
+        if (elementIndex === this.index) {
           if (!element.classList.contains('active')) {
             element.classList.add('active');
           }
@@ -306,17 +328,20 @@ yv.slider = {
   // Create paging ordenation & insert on the slider container
   pagingBuilder() {
     for (let i = 0; i < this.slidesLength; i++) {
-      const pagingItem = document.createElement("span");
+      if (i % this.slidesToShift === 0) {
+        const pagingItem = document.createElement("span");
+        
+        pagingItem.classList.add('index');
+        pagingItem.classList.add(i);
+        if (i === 0) pagingItem.classList.add('active');
 
-      pagingItem.classList.add('index');
-      if (i === 0) pagingItem.classList.add('active');
+        pagingItem.addEventListener('click', () => {
+          this.shiftPaging(i);
+        });
 
-      pagingItem.addEventListener('click', () => {
-        this.shiftPaging(i);
-      });
-
-      if (this.paging) {
-        this.paging.insertAdjacentElement('beforeend', pagingItem);
+        if (this.paging) {
+          this.paging.insertAdjacentElement('beforeend', pagingItem);
+        }
       }
     }
   }
@@ -326,10 +351,10 @@ yv.slider.initConfig(
   {
     slidesToShow: 3,
     slidesToShift: 3,
-    slidesToLoad: 6,
+    slidesToLoad: 9,
     showButtons: true,
     showPaging: true,
-    infinite: true
+    infinite: false
   },
   {
     container: '#container',
