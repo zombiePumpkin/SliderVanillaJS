@@ -1,36 +1,19 @@
 // Main class
 class Slider {
   constructor(options, sliderElements) {
-    // Parameters destructuring
-    const { 
-      slidesToShow,
-      slidesToShift,
-      slidesToLoad,
-      showButtons,
-      showPaging,
-      infinite
-    } = options;
-
-    const { 
-      container,
-      view,
-      wrapper,
-      slides 
-    } = sliderElements;
-
     // Slider config options
-    this.slidesToShow = slidesToShow;
-    this.slidesToShift = slidesToShift || 1;
-    this.slidesToLoad = slidesToLoad;
-    this.showButtons = showButtons;
-    this.showPaging = showPaging;
-    this.infinite = infinite;
+    this.slidesToShow = options.slidesToShow;
+    this.slidesToShift = options.slidesToShift || 1;
+    this.slidesToLoad = options.slidesToLoad;
+    this.showButtons = options.showButtons;
+    this.showPaging = options.showPaging;
+    this.infinite = options.infinite;
 
     // Main slider elements
-    this.container = document.querySelector(container);
-    this.view = document.querySelector(view);
-    this.wrapper = document.querySelector(wrapper);
-    this.slides = this.wrapper.querySelectorAll(slides);
+    this.container = document.querySelector(sliderElements.container);
+    this.view = document.querySelector(sliderElements.view);
+    this.wrapper = document.querySelector(sliderElements.wrapper);
+    this.slides = this.wrapper.querySelectorAll(sliderElements.slides);
 
     // Initial slider position values
     this.index = 0;
@@ -41,7 +24,11 @@ class Slider {
     this.limit = 50;
     this.allowShift = true;
 
-    // Main slider element properties
+    // Initial slider element properties
+    this.slideSize = 0;
+    this.slidesLength = 0;
+
+    // Set the slider size
     this.slideSize = (
       Number(getComputedStyle(this.slides[0]).marginLeft.replace('px', '')) +
       Number(getComputedStyle(this.slides[0]).marginRight.replace('px', '')) +
@@ -67,44 +54,97 @@ class Slider {
     // Set initial position of the slider
     this.wrapper.style.left = '0px';
 
-    // Adjusting the size of the view
+    // Set the size of the view
     this.view.style.width = (this.slideSize * this.slidesToShow) + 'px';
 
-    // Creating the button navigators
+    // Build slider navigation buttons
     if (this.showButtons) {
-      // Previous button
-      this.prev = document.createElement('span')
-      this.prev.setAttribute('id', 'prev');
-      this.prev.classList.add('control', 'prev');
-      if (!this.infinite) this.prev.classList.add('hide');
-
-      // Next button
-      this.next = document.createElement('span')
-      this.next.setAttribute('id', 'next');
-      this.next.classList.add('control', 'next');
-
-      // Iserting the buttons in slider element
-      this.view.insertAdjacentElement('beforebegin', this.prev);
-      this.view.insertAdjacentElement('afterend', this.next);
-
-      // Init click events
-      this.prev.addEventListener('click', () => this.shiftSlide(-1));
-      this.next.addEventListener('click', () => this.shiftSlide(1));
+      this.prev = 'undefined';
+      this.next = 'undefined';
+      this.buildButtons();
     }
-
-    // Creating the paging navigation
+    
+    // Build slider navigation paging
     if (this.showPaging) {
-      this.paging = document.createElement("div");
-      this.paging.classList.add('paging');
-
-      // Insert paging in the slider container
-      this.container.insertAdjacentElement('beforeend', this.paging);
-
-      // Init paging items and click events
-      this.pagingBuilder();
+      this.paging = 'undefined';
+      this.buildPaging();
     }
+
+    // Automaticaly initialize the slider events
+    this.initDragEvents();
 
     // Slider is loaded
+    this.container.classList.add('loaded');
+  }
+
+  // Update slider configurations and properties
+  resetSlider(options) {
+    this.container.classList.remove('loaded');
+
+    // Slider config options
+    this.slidesToShow = options.slidesToShow;
+    this.slidesToShift = options.slidesToShift || 1;
+    this.slidesToLoad = options.slidesToLoad;
+    this.showButtons = options.showButtons;
+    this.showPaging = options.showPaging;
+    this.infinite = options.infinite;
+
+    // Initial slider position values
+    this.index = 0;
+    this.posX1 = 0;
+    this.posX2 = 0;
+    this.startPos = 0;
+    this.endPos = 0;
+    this.limit = 50;
+    this.allowShift = true;
+
+    // Initial slider element properties
+    this.slideSize = 0;
+    this.slidesLength = 0;
+
+    // Set the slider size
+    this.slideSize = (
+      Number(getComputedStyle(this.slides[0]).marginLeft.replace('px', '')) +
+      Number(getComputedStyle(this.slides[0]).marginRight.replace('px', '')) +
+      Number(getComputedStyle(this.slides[0]).width.replace('px', ''))
+    );
+    
+    // Set the total amount of slides
+    this.slidesLength = this.slides.length;
+
+    // Set the total size of the wrapper
+    this.wrapper.style.width = String(this.slideSize * this.slidesToLoad) + 'px';
+
+    // Set the max number of slides to load
+    if (!isNaN(this.slidesToLoad) && this.slidesToLoad !== null) {
+      if (this.slidesToLoad <= this.slidesLength) {
+        for (let i = 0; i < this.slidesLength; i++) {
+          if (i >= this.slidesToLoad) this.slides[i].remove();
+        }
+        this.slidesLength = this.slidesToLoad;
+      }
+    }
+    
+    // Set initial position of the slider
+    this.wrapper.style.left = '0px';
+
+    // Set the size of the view
+    this.view.style.width = (this.slideSize * this.slidesToShow) + 'px';
+
+    // Build slider navigation buttons
+    if (this.showButtons) {
+      const buttons = this.container.querySelectorAll('.control');
+      if (buttons.length) buttons.forEach(element => element.remove());
+      this.buildButtons();
+    }
+
+    // Build slider navigation paging
+    if (this.showPaging) {
+      const paging = this.container.querySelector('.paging');
+      if (paging) paging.remove();
+      this.buildPaging();
+    }
+
     this.container.classList.add('loaded');
   }
 
@@ -199,15 +239,15 @@ class Slider {
     if (!this.infinite) {
       if (this.index === 0) {
         if (this.prev) this.prev.classList.add('hide');
-
-      } else if (this.index + this.slidesToShift >= this.slidesLength) {
-        if (this.next) this.next.classList.add('hide');
-
       } else {
         if (this.prev && this.prev.classList.contains('hide')) {
           this.prev.classList.remove('hide');
         }
+      }
 
+      if (this.index === (this.slidesLength - 1) - ((this.slidesLength - 1) % this.slidesToShift)) {
+        if (this.next) this.next.classList.add('hide');
+      } else {
         if (this.next && this.next.classList.contains('hide')) {
           this.next.classList.remove('hide');
         }
@@ -293,7 +333,7 @@ class Slider {
 
     const leftPosition = parseInt(this.wrapper.style.left);
     
-    if (leftPosition % this.slideSize !== 0) this.shiftPaging(this.index);
+    if (leftPosition % this.slideSize !== 0) this.jumpSlide(this.index);
     
     this.allowShift = true;
   }
@@ -319,8 +359,8 @@ class Slider {
     }
   }
 
-  // Event triggered on click the paging buttons
-  shiftPaging(index) {
+  // Event triggered on the paging navigation
+  jumpSlide(index) {
     this.wrapper.classList.add('shifting');
 
     if (index < 0 && this.infinite) {
@@ -339,8 +379,11 @@ class Slider {
     this.allowShift = false;
   }
 
-  // Create paging ordenation & insert on the slider container
-  pagingBuilder() {
+  // Create slider paging navigation
+  buildPaging() {
+    this.paging = document.createElement('div');
+    this.paging.classList.add('paging');
+
     for (let i = 0; i < this.slidesLength; i++) {
       if (i % this.slidesToShift === 0) {
         const pagingItem = document.createElement("span");
@@ -350,7 +393,7 @@ class Slider {
         if (i === 0) pagingItem.classList.add('active');
 
         pagingItem.addEventListener('click', () => {
-          this.shiftPaging(i);
+          this.jumpSlide(i);
         });
 
         if (this.paging) {
@@ -358,17 +401,41 @@ class Slider {
         }
       }
     }
+
+    this.container.insertAdjacentElement('beforeend', this.paging);
+  }
+
+  // Create slider navigation buttons
+  buildButtons() {
+    // Previous button
+    this.prev = document.createElement('span');
+    this.prev.setAttribute('id', 'prev');
+    this.prev.classList.add('control', 'prev');
+    if (!this.infinite) this.prev.classList.add('hide');
+    
+    // Next button
+    this.next = document.createElement('span');
+    this.next.setAttribute('id', 'next');
+    this.next.classList.add('control', 'next');
+
+    // Iserting the buttons in slider element
+    this.view.insertAdjacentElement('beforebegin', this.prev);
+    this.view.insertAdjacentElement('afterend', this.next);
+
+    // Init click events
+    this.prev.addEventListener('click', () => this.shiftSlide(-1));
+    this.next.addEventListener('click', () => this.shiftSlide(1));
   }
 }
 
 const slider = new Slider(
   {
-    slidesToShow: 4,
-    slidesToShift: 2,
+    slidesToShow: 3,
+    slidesToShift: 3,
     slidesToLoad: 6,
     showButtons: true,
     showPaging: true,
-    infinite: true
+    infinite: false
   },
   {
     container: '#container',
@@ -378,4 +445,32 @@ const slider = new Slider(
   }
 );
 
-slider.initDragEvents();
+let change = false;
+const timer = setInterval(() => {
+
+  const desktop = {
+    slidesToShow: 3,
+    slidesToShift: 3,
+    slidesToLoad: 6,
+    showButtons: true,
+    showPaging: true,
+    infinite: false
+  }
+
+  const mobile = {
+    slidesToShow: 1,
+    slidesToShift: 1,
+    slidesToLoad: 6,
+    showButtons: true,
+    showPaging: true,
+    infinite: false
+  }
+
+  if (window.outerWidth > 768 && change) {
+    slider.resetSlider(desktop);
+    change = false;
+  } else if (window.outerWidth < 768 && !change) {
+    slider.resetSlider(mobile);
+    change = true;
+  }
+}, 500);
