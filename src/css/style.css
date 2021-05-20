@@ -21,6 +21,11 @@
   position: relative;
   height: auto;
   z-index: 2;
+  cursor: grab;
+}
+
+#view.grabbing {
+  cursor: grabbing;
 }
 
 #wrapper {
@@ -39,7 +44,6 @@
   position: relative;
   margin: 0 5px;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 1s;
 }
 

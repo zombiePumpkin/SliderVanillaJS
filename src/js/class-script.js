@@ -1,19 +1,40 @@
 // Main class
 class Slider {
-  constructor(options, sliderElements) {
+  constructor(options, sliderElements, slidesToLoad) {
+    if (!options || !sliderElements) return;
+
+    // Save all breakpoints
+    this.breakpoints = [ ...options ];
+
+    const {
+      slidesToShow,
+      slidesToShift,
+      showButtons,
+      showPaging,
+      infinite,
+      breakpoint
+    } = options[0];
+
+    const {
+      container,
+      view,
+      wrapper,
+      slides
+    } = sliderElements;
+ 
     // Slider config options
-    this.slidesToShow = options.slidesToShow;
-    this.slidesToShift = options.slidesToShift || 1;
-    this.slidesToLoad = options.slidesToLoad;
-    this.showButtons = options.showButtons;
-    this.showPaging = options.showPaging;
-    this.infinite = options.infinite;
+    this.slidesToShow = slidesToShow;
+    this.slidesToShift = slidesToShift || 1;
+    this.showButtons = showButtons;
+    this.showPaging = showPaging;
+    this.infinite = infinite;
+    this.breakpoint = breakpoint;
 
     // Main slider elements
-    this.container = document.querySelector(sliderElements.container);
-    this.view = document.querySelector(sliderElements.view);
-    this.wrapper = document.querySelector(sliderElements.wrapper);
-    this.slides = this.wrapper.querySelectorAll(sliderElements.slides);
+    this.container = document.querySelector(container);
+    this.view = document.querySelector(view);
+    this.wrapper = document.querySelector(wrapper);
+    this.slides = this.wrapper.querySelectorAll(slides);
 
     // Initial slider position values
     this.index = 0;
@@ -27,6 +48,7 @@ class Slider {
     // Initial slider element properties
     this.slideSize = 0;
     this.slidesLength = 0;
+    this.slidesToLoad = slidesToLoad || this.slidesLength;
 
     // Set the slider size
     this.slideSize = (
@@ -43,7 +65,7 @@ class Slider {
 
     // Set the max number of slides to load
     if (!isNaN(this.slidesToLoad) && this.slidesToLoad !== null) {
-      if (this.slidesToLoad <= this.slidesLength) {
+      if (this.slidesToLoad < this.slidesLength) {
         for (let i = 0; i < this.slidesLength; i++) {
           if (i >= this.slidesToLoad) this.slides[i].remove();
         }
@@ -73,21 +95,59 @@ class Slider {
     // Automaticaly initialize the slider events
     this.initDragEvents();
 
+    // Adjust the slider view
+    this.handleBreakpoints();
+
     // Slider is loaded
     this.container.classList.add('loaded');
   }
 
+  handleBreakpoints() {
+    if (this.breakpoints.length > 1) {
+      for (let i = 0; i < this.breakpoints.length; i++) {
+        if (this.breakpoints[i + 1] !== undefined) {
+          if (
+            window.innerWidth <= this.breakpoints[i].breakpoint &&
+            window.innerWidth > this.breakpoints[i + 1].breakpoint
+          ) {
+            const breakpoint = { ...this.breakpoints[i] }
+            this.resizeSlider(breakpoint);
+          }
+        } else {
+          if (
+            window.innerWidth <= this.breakpoints[i].breakpoint &&
+            window.innerWidth > 0
+          ) {
+            const breakpoint = { ...this.breakpoints[i] }
+            this.resizeSlider(breakpoint);
+          }
+        }
+      }
+    } else {
+      this.breakpoints.push({
+        slidesToShow: 1,
+        slidesToShift: 1,
+        showButtons: this.showButtons,
+        showPaging: this.showPaging,
+        infinite: this.infinite,
+        breakpoint: 500
+      });
+
+      this.handleBreakpoints();
+    }
+  }
+
   // Update slider configurations and properties
-  resetSlider(options) {
+  resizeSlider(options) {
     this.container.classList.remove('loaded');
 
     // Slider config options
     this.slidesToShow = options.slidesToShow;
     this.slidesToShift = options.slidesToShift || 1;
-    this.slidesToLoad = options.slidesToLoad;
     this.showButtons = options.showButtons;
     this.showPaging = options.showPaging;
     this.infinite = options.infinite;
+    this.breakpoint = options.breakpoint;
 
     // Initial slider position values
     this.index = 0;
@@ -100,7 +160,6 @@ class Slider {
 
     // Initial slider element properties
     this.slideSize = 0;
-    this.slidesLength = 0;
 
     // Set the slider size
     this.slideSize = (
@@ -108,22 +167,9 @@ class Slider {
       Number(getComputedStyle(this.slides[0]).marginRight.replace('px', '')) +
       Number(getComputedStyle(this.slides[0]).width.replace('px', ''))
     );
-    
-    // Set the total amount of slides
-    this.slidesLength = this.slides.length;
 
     // Set the total size of the wrapper
     this.wrapper.style.width = String(this.slideSize * this.slidesToLoad) + 'px';
-
-    // Set the max number of slides to load
-    if (!isNaN(this.slidesToLoad) && this.slidesToLoad !== null) {
-      if (this.slidesToLoad <= this.slidesLength) {
-        for (let i = 0; i < this.slidesLength; i++) {
-          if (i >= this.slidesToLoad) this.slides[i].remove();
-        }
-        this.slidesLength = this.slidesToLoad;
-      }
-    }
     
     // Set initial position of the slider
     this.wrapper.style.left = '0px';
@@ -169,6 +215,8 @@ class Slider {
   initDragEvents() {
     // Event triggered on press the left mouse button/touch the screen
     let dragStart = (event) => {
+      this.view.classList.add('grabbing');
+
       this.startPos = this.wrapper.offsetLeft;
 
       if (event.type === 'touchstart') {
@@ -203,6 +251,8 @@ class Slider {
 
     // Event triggered when user release the mouse button/finger from the screen
     let dragEnd = ()  => {
+      this.view.classList.remove('grabbing');
+
       this.endPos = this.wrapper.offsetLeft;
 
       if (this.endPos - this.startPos < -this.limit) {
@@ -223,15 +273,18 @@ class Slider {
     dragEnd = dragEnd.bind(this);
 
     // Mouse events
-    this.container.addEventListener('mousedown', dragStart);
+    this.view.addEventListener('mousedown', dragStart);
 
     // Touch events
-    this.container.addEventListener('touchstart', dragStart);
+    this.view.addEventListener('touchstart', dragStart);
     document.addEventListener('touchmove', dragOut);
     document.addEventListener('touchend', dragEnd);
 
     // Transition events
-    this.container.addEventListener('transitionend', () => this.checkIndex());
+    this.view.addEventListener('transitionend', () => this.checkIndex());
+
+    // Resize events
+    window.addEventListener('resize', () => this.handleBreakpoints());
   }
 
   // Hide slider buttons on the screen depending on position
@@ -429,48 +482,37 @@ class Slider {
 }
 
 const slider = new Slider(
-  {
-    slidesToShow: 3,
-    slidesToShift: 3,
-    slidesToLoad: 6,
-    showButtons: true,
-    showPaging: true,
-    infinite: false
-  },
+  [
+    {
+      slidesToShow: 4,
+      slidesToShift: 4,
+      showButtons: true,
+      showPaging: true,
+      infinite: false,
+      breakpoint: 9999
+    },
+    {
+      slidesToShow: 2,
+      slidesToShift: 2,
+      showButtons: true,
+      showPaging: true,
+      infinite: false,
+      breakpoint: 990
+    },
+    {
+      slidesToShow: 1,
+      slidesToShift: 1,
+      showButtons: true,
+      showPaging: true,
+      infinite: false,
+      breakpoint: 690
+    }
+  ],
   {
     container: '#container',
     view: '#view',
     wrapper: '#wrapper',
     slides: '.slide',
-  }
+  },
+  6
 );
-
-let change = false;
-const timer = setInterval(() => {
-
-  const desktop = {
-    slidesToShow: 3,
-    slidesToShift: 3,
-    slidesToLoad: 6,
-    showButtons: true,
-    showPaging: true,
-    infinite: false
-  }
-
-  const mobile = {
-    slidesToShow: 1,
-    slidesToShift: 1,
-    slidesToLoad: 6,
-    showButtons: true,
-    showPaging: true,
-    infinite: false
-  }
-
-  if (window.outerWidth > 768 && change) {
-    slider.resetSlider(desktop);
-    change = false;
-  } else if (window.outerWidth < 768 && !change) {
-    slider.resetSlider(mobile);
-    change = true;
-  }
-}, 500);
