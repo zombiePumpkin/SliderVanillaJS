@@ -102,6 +102,7 @@ class Slider {
     this.container.classList.add('loaded');
   }
 
+  // Handle breakpoints in the page
   handleBreakpoints() {
     if (this.breakpoints.length > 1) {
       for (let i = 0; i < this.breakpoints.length; i++) {
