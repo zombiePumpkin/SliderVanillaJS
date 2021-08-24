@@ -198,7 +198,7 @@ class Slider {
   // Fix problems with keyboard events
   initKeysEvents(...elementNames) {
     // Fix the tab press on the end of inputs inside forms inside the slider
-    this.container.addEventListener('keydown', (event) => {
+    this.view.addEventListener('keydown', (event) => {
       if (event.key === 'Tab') {
         const eventInput = event.target;
 
@@ -278,8 +278,8 @@ class Slider {
 
     // Touch events
     this.view.addEventListener('touchstart', dragStart);
-    document.addEventListener('touchmove', dragOut);
-    document.addEventListener('touchend', dragEnd);
+    this.view.addEventListener('touchmove', dragOut);
+    this.view.addEventListener('touchend', dragEnd);
 
     // Transition events
     this.view.addEventListener('transitionend', () => this.checkIndex());
@@ -357,6 +357,8 @@ class Slider {
     this.wrapper.classList.add('shifting');
 
     if (this.allowShift) {
+      this.allowShift = false;
+
       if (!action) { this.startPos = this.wrapper.offsetLeft; }
 
       if (dir === 1) {
@@ -371,8 +373,6 @@ class Slider {
         this.index -= this.slidesToShift;
       }
     }
-
-    this.allowShift = false;
 
     this.shiftLimit();
   }
@@ -416,6 +416,7 @@ class Slider {
   // Event triggered on the paging navigation
   jumpSlide(index) {
     this.wrapper.classList.add('shifting');
+    this.allowShift = false;
 
     if (index < 0 && this.infinite) {
       index = this.slidesLength - 1;
@@ -430,7 +431,6 @@ class Slider {
     this.wrapper.style.left = -(index * this.slideSize) + 'px';
 
     this.index = index;
-    this.allowShift = false;
   }
 
   // Create slider paging navigation
@@ -514,6 +514,42 @@ const slider = new Slider(
     view: '#view',
     wrapper: '#wrapper',
     slides: '.slide',
+  },
+  6
+);
+
+const slider2 = new Slider(
+  [
+    {
+      slidesToShow: 4,
+      slidesToShift: 4,
+      showButtons: true,
+      showPaging: true,
+      infinite: false,
+      breakpoint: 9999
+    },
+    {
+      slidesToShow: 2,
+      slidesToShift: 2,
+      showButtons: true,
+      showPaging: true,
+      infinite: false,
+      breakpoint: 990
+    },
+    {
+      slidesToShow: 1,
+      slidesToShift: 1,
+      showButtons: true,
+      showPaging: true,
+      infinite: false,
+      breakpoint: 690
+    }
+  ],
+  {
+    container: '#container-2',
+    view: '#view-2',
+    wrapper: '#wrapper-2',
+    slides: '.slide-2',
   },
   6
 );
